@@ -2,6 +2,7 @@ import praw
 import config
 import time
 import requests
+import argparse
 import os
 
 image_directory = os.path.expanduser('~') + '/Documents/images/'
@@ -62,12 +63,51 @@ def detect_images(urls):
 	return images
 
 
-def run_bot(reddit):
+def get_top_submissions(subreddit):
+	top_submissions = []
+	submission_ids = subreddit.hot(limit=25)
+	for id in submission_ids:
+		top_submissions.append(reddit.submission(id).url)	
+	return top_submissions
+
+
+
+def get_subreddit_images(reddit, subreddits):
+	images = []
+	for subreddit in subreddits:
+		submissions = subreddit.hot(limit=25)
+		images.append(detect_images(submissions))
+
+
+
+def save_images_from_subreddits(reddit, subreddits):
 	print 'Let''s go!'
-	# for comment in reddit.subreddit('EarthPorn','title','me_irl','spaceporn','wallpaper').comments(limit=25):
-	# 	if "cat" in comment.body:
-	# 		print "String found!!"
-	# 		comment.reply("I found cat")
+
+	print 'Getting subreddits...'
+	subreddit_list = ''
+	
+	for subreddit in subreddits:
+		subreddit_list += subreddit + '+'
+
+	subreddit_list = subreddit_list[:-1]
+
+	submission_urls = []
+	submissions = reddit.subreddit(subreddit_list).hot(limit=25)
+
+	for submission in submissions:
+		submission_urls.append(submission.url)
+
+	print 'Detecting images'
+	images = detect_images(submission_urls)
+
+	print 'Saving images'
+
+	save_images(images)
+
+	print 'Done'
+
+def save_upvoted_image_submissions(reddit):
+	print 'Let''s go!'
 
 	print 'Finding upvoted submissions...'
 	redditor = reddit.redditor(config.username)
@@ -87,6 +127,27 @@ def run_bot(reddit):
 
 	print 'Done'
 
-reddit = bot_login()
+def parse_args():
+	parser = argparse.ArgumentParser(description='Image Saver')
+	parser.add_argument('-s', '--subreddits', action='store_true', help='choose a list of subreddits to save images from')
+	parser.add_argument('-u', '--upvoted', action='store_true', help='save images from your latest upvoted submissions')
+	args = parser.parse_args()
+	return args
 
-run_bot(reddit)
+def main():
+	print 'Image Saver Reddit bot by /u/yelhsa08'
+
+	reddit = bot_login()
+
+	args = parse_args()
+
+	if args.subreddits:
+		print 'Let''s get some images from subreddits'
+		subreddit_input = raw_input('Enter a comma-separated list of subreddits (e.g. wallpaper,EarthPorn,multiwall): ')
+		subreddits = subreddit_input.split(',')
+		save_images_from_subreddits(reddit, subreddits)
+	elif args.upvoted:
+		print "Let's look in your upvoted submissions"
+		save_upvoted_image_submissions(reddit)
+
+main()
