@@ -9,7 +9,6 @@ from PIL import Image
 import urllib2 as urllib
 from cStringIO import StringIO
 
-image_directory = os.path.expanduser('~') + '/Documents/images/'
 image_count = 1
 
 def bot_login():
@@ -52,11 +51,14 @@ def is_image(url):
 def convert_to_greyscale(image):
 	return image.convert('L')
 
-def create_directory():
-	if not os.path.exists(os.path.abspath(image_directory)):
-		os.makedirs(os.path.abspath(image_directory))
+def rotate_image(image, degrees):
+	return image.rotate(degrees)
 
-def save_images(image_urls, greyscale):
+def create_directory():
+	if not os.path.exists(os.path.abspath(config.image_directory)):
+		os.makedirs(os.path.abspath(config.image_directory))
+
+def save_images(image_urls, greyscale, degrees):
 	global image_count
 	for url in image_urls:
 		# Save image as the type indicated in the submission URL
@@ -72,8 +74,10 @@ def save_images(image_urls, greyscale):
 		image = Image.open(image_content)
 		if greyscale:
 			image = convert_to_greyscale(image)
+		if degrees != 0:
+			image = image.rotate(degrees)
 		file_name = '{}-{}.{}'.format('image', image_count, extension)
-		image.save(image_directory + file_name)
+		image.save(config.image_directory + file_name)
 
 		# enumerate image_count
 		image_count += 1
@@ -107,6 +111,7 @@ def subreddit_exists(reddit, subreddits):
 def parse_args():
 	parser = argparse.ArgumentParser(description='Image Saver Bot')
 	parser.add_argument('-g', '--greyscale', action='store_true', help='indicates whether the images saved are converted to greyscale')
+	parser.add_argument('-r', '--rotation', type=int, help='number of degrees to rotate images counterclockwise (a negative value will rotate clockwise)')
 	args = parser.parse_args()
 	return args
 
@@ -119,6 +124,7 @@ def run_bot():
 	# Parse arguments for image transformations
 	args = parse_args()
 	greyscale = args.greyscale
+	degrees_to_rotate = args.rotation
 
 	# Parse subreddits from user input, filtering out empty items and finding any subreddits that do not exist
 	subreddit_input = raw_input('Enter a comma-separated list of subreddits: ')
@@ -149,7 +155,7 @@ def run_bot():
 	image_urls = get_subreddit_images(reddit, subreddits, num_images)
 
 	# Save images to directory
-	save_images(image_urls, greyscale)
+	save_images(image_urls, greyscale, degrees_to_rotate)
 
 	print 'Done! Check the directory for your images'
 
