@@ -111,7 +111,7 @@ def subreddit_exists(reddit, subreddits):
 def parse_args():
 	parser = argparse.ArgumentParser(description='Image Saver Bot')
 	parser.add_argument('-g', '--greyscale', action='store_true', help='indicates whether the images saved are converted to greyscale')
-	parser.add_argument('-r', '--rotation', type=int, help='number of degrees to rotate images counterclockwise (a negative value will rotate clockwise)')
+	parser.add_argument('-r', '--rotation', type=int, default=0, help='number of degrees to rotate images counterclockwise (a negative value will rotate clockwise)')
 	args = parser.parse_args()
 	return args
 
